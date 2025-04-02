@@ -1,29 +1,91 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
+from matplotlib import pyplot as plt
 
 # Load the datasets
 train_df = pd.read_csv("obesity_training.csv")
 test_df = pd.read_csv("obesity_testing.csv")
 sample_submission = pd.read_csv("sample_submission.csv")
 
-# Check shapes to know the number of records and features
-# print("Training Data Shape:", train_df.shape)
-# print("Testing Data Shape:", test_df.shape)
+# ------------------------------
+# 1. Load the Data (Assuming data is already loaded)
+# ------------------------------
+# For example:
+# train_df = pd.read_csv("obesity_training.csv")
+# test_df = pd.read_csv("obesity_testing.csv")
+# sample_submission = pd.read_csv("sample_submission.csv")
 
-# Display first few rows of the training data
-# print("First 5 rows of Training Data:")
-# print(train_df.head())
+# (Make sure you have run the above code or loaded the datasets accordingly)
 
-# Get an overview of data types and non-null counts
-# print("Data Information:")
-# print(train_df.info())
+# Print initial shapes for verification
+print("Initial Training Data Shape:", train_df.shape)
+print("Initial Testing Data Shape:", test_df.shape)
 
-print("Descriptive Statistics:")
-print(train_df.describe())
+# ------------------------------
+# 2. Identify Numeric and Categorical Columns
+# ------------------------------
+numeric_cols = train_df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+categorical_cols = train_df.select_dtypes(include=['object']).columns.tolist()
 
-# If there are categorical variables, review their frequency counts
-for col in train_df.select_dtypes(include=['object']).columns:
-    print(f"\nValue counts for {col}:")
-    print(train_df[col].value_counts())
+print("\nNumeric Columns:", numeric_cols)
+print("Categorical Columns:", categorical_cols)
+
+# ------------------------------
+# 3. Handle Missing Values
+# ------------------------------
+
+# Impute missing values for numeric columns (using median), excluding 'ID'
+for col in numeric_cols:
+    if col != 'ID':  # Skip ID column
+        median_val = train_df[col].median()
+        train_df[col].fillna(median_val, inplace=True)
+        test_df[col].fillna(median_val, inplace=True)
+
+# Impute missing values for categorical columns (using mode), excluding the target "Obesity"
+for col in categorical_cols:
+    if col != 'Obesity':
+        mode_val = train_df[col].mode()[0]
+        train_df[col].fillna(mode_val, inplace=True)
+        test_df[col].fillna(mode_val, inplace=True)
+
+# ------------------------------
+# 4. Drop Unnecessary Columns
+# ------------------------------
+# Remove the ID column since it's just a unique identifier
+if 'ID' in train_df.columns:
+    train_df.drop('ID', axis=1, inplace=True)
+if 'ID' in test_df.columns:
+    test_df.drop('ID', axis=1, inplace=True)
+
+# ------------------------------
+# 5. Encode Categorical Variables
+# ------------------------------
+# List of categorical columns to encode (excluding the target variable "Obesity")
+cols_to_encode = [col for col in categorical_cols if col != 'Obesity']
+
+# Apply one-hot encoding to the training set
+train_df_encoded = pd.get_dummies(train_df, columns=cols_to_encode, drop_first=True)
+
+# Apply one-hot encoding to the testing set
+test_df_encoded = pd.get_dummies(test_df, columns=cols_to_encode, drop_first=True)
+
+# ------------------------------
+# 6. Align the Training and Testing Datasets
+# ------------------------------
+# Ensure both datasets have the same columns (if a category is missing in one, fill it with 0)
+train_df_encoded, test_df_encoded = train_df_encoded.align(test_df_encoded, join='left', axis=1, fill_value=0)
+
+# ------------------------------
+# 7. Review the Updated Datasets
+# ------------------------------
+print("\nUpdated Training Data (Encoded) Info:")
+print(train_df_encoded.info())
+print("\nUpdated Testing Data (Encoded) Info:")
+print(test_df_encoded.info())
+
+print("\nHead of Updated Training Data:")
+print(train_df_encoded.head())
+
+print("\nHead of Updated Testing Data:")
+print(test_df_encoded.head())
