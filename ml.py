@@ -1,7 +1,10 @@
 from contextlib import redirect_stdout
 import io
 import pandas as pd
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures, LabelEncoder
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
 
 # ------------------------------
 # 1. Load the Data
@@ -82,7 +85,7 @@ poly_feature_names = poly.get_feature_names_out(continuous_cols)
 train_poly_df = pd.DataFrame(train_poly, columns=poly_feature_names, index=train_df_encoded.index)
 test_poly_df = pd.DataFrame(test_poly, columns=poly_feature_names, index=test_df_encoded.index)
 
-# IMPORTANT: Drop the original continuous columns so we keep ONLY the polynomial features
+# IMPORTANT: Drop the original continuous columns, so we keep ONLY the polynomial features
 train_df_encoded.drop(columns=continuous_cols, inplace=True)
 test_df_encoded.drop(columns=continuous_cols, inplace=True)
 
@@ -90,7 +93,7 @@ test_df_encoded.drop(columns=continuous_cols, inplace=True)
 train_df_final = pd.concat([train_df_encoded, train_poly_df], axis=1)
 test_df_final = pd.concat([test_df_encoded, test_poly_df], axis=1)
 
-# Double-check: Remove original continuous columns from the final DataFrames if still present
+# Double-check: Remove any lingering original continuous columns if present
 train_df_final = train_df_final.drop(columns=continuous_cols, errors='ignore')
 test_df_final = test_df_final.drop(columns=continuous_cols, errors='ignore')
 
@@ -122,3 +125,66 @@ with open("preprocessing_output_full.txt", "w") as f:
         print(train_df_final.head())
         print("\nHead of Final Testing Data:")
         print(test_df_final.head())
+
+# ------------------------------
+# 9. Model Building and Evaluation with Hyperparameter Tuning
+# ------------------------------
+# Separate features (X) and target (y) from the final training DataFrame.
+X = train_df_final.drop('Obesity', axis=1)
+y = train_df_final['Obesity']
+
+# Encode the target variable (since it's a multi-class string variable)
+le = LabelEncoder()
+y_encoded = le.fit_transform(y)
+
+# Split the data into a training set and a validation set (80/20 split)
+X_train, X_val, y_train, y_val = train_test_split(X, y_encoded, test_size=0.2, random_state=42)
+
+# Define parameter grid for RandomForest
+param_grid = {
+    'n_estimators': [100, 200, 300],
+    'max_depth': [None, 10, 20, 30],
+    'min_samples_split': [2, 5, 10]
+}
+
+# Setup GridSearchCV for hyperparameter tuning
+grid_search = GridSearchCV(RandomForestClassifier(random_state=42),
+                           param_grid,
+                           cv=3,
+                           n_jobs=-1,
+                           scoring='accuracy')
+
+grid_search.fit(X_train, y_train)
+print("Best Parameters:", grid_search.best_params_)
+
+# Use the best estimator found by GridSearchCV
+best_clf = grid_search.best_estimator_
+
+# Predict on the validation set and evaluate the performance
+y_val_pred = best_clf.predict(X_val)
+accuracy = accuracy_score(y_val, y_val_pred)
+print("Validation Accuracy after tuning:", accuracy)
+print("\nClassification Report:")
+print(classification_report(y_val, y_val_pred, target_names=le.classes_))
+
+# ------------------------------
+# 10. Generate Predictions for the Test Set and Prepare Submission
+# ------------------------------
+# For the test set, remove the "Obesity" column if it exists (test set is unlabeled)
+if 'Obesity' in test_df_final.columns:
+    X_test = test_df_final.drop('Obesity', axis=1)
+else:
+    X_test = test_df_final
+
+# Predict using the tuned classifier
+y_test_pred = best_clf.predict(X_test)
+
+# Convert the predicted numeric labels back to the original class names
+y_test_pred_labels = le.inverse_transform(y_test_pred)
+
+# Prepare the submission file using sample_submission as a template.
+submission = sample_submission.copy()
+submission['Obesity'] = y_test_pred_labels
+submission.to_csv("final_submission.csv", index=False)
+
+print("Modeling completed and submission file 'final_submission.csv' generated!")
