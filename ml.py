@@ -16,9 +16,6 @@ sample_submission = pd.read_csv("sample_submission.csv")
 # test_df = pd.read_csv("obesity_testing.csv")
 # sample_submission = pd.read_csv("sample_submission.csv")
 
-# (Make sure you have run the above code or loaded the datasets accordingly)
-
-# Print initial shapes for verification
 print("Initial Training Data Shape:", train_df.shape)
 print("Initial Testing Data Shape:", test_df.shape)
 
@@ -32,27 +29,26 @@ print("\nNumeric Columns:", numeric_cols)
 print("Categorical Columns:", categorical_cols)
 
 # ------------------------------
-# 3. Handle Missing Values
+# 3. Handle Missing Values (Avoiding chained assignment warnings)
 # ------------------------------
 
-# Impute missing values for numeric columns (using median), excluding 'ID'
+# For numeric columns (excluding 'ID'), fill missing values with the median
 for col in numeric_cols:
     if col != 'ID':  # Skip ID column
         median_val = train_df[col].median()
-        train_df[col].fillna(median_val, inplace=True)
-        test_df[col].fillna(median_val, inplace=True)
+        train_df[col] = train_df[col].fillna(median_val)
+        test_df[col] = test_df[col].fillna(median_val)
 
-# Impute missing values for categorical columns (using mode), excluding the target "Obesity"
+# For categorical columns (excluding the target variable "Obesity"), fill missing values with the mode
 for col in categorical_cols:
     if col != 'Obesity':
         mode_val = train_df[col].mode()[0]
-        train_df[col].fillna(mode_val, inplace=True)
-        test_df[col].fillna(mode_val, inplace=True)
+        train_df[col] = train_df[col].fillna(mode_val)
+        test_df[col] = test_df[col].fillna(mode_val)
 
 # ------------------------------
-# 4. Drop Unnecessary Columns
+# 4. Drop the ID Column (if not needed)
 # ------------------------------
-# Remove the ID column since it's just a unique identifier
 if 'ID' in train_df.columns:
     train_df.drop('ID', axis=1, inplace=True)
 if 'ID' in test_df.columns:
@@ -64,16 +60,12 @@ if 'ID' in test_df.columns:
 # List of categorical columns to encode (excluding the target variable "Obesity")
 cols_to_encode = [col for col in categorical_cols if col != 'Obesity']
 
-# Apply one-hot encoding to the training set
 train_df_encoded = pd.get_dummies(train_df, columns=cols_to_encode, drop_first=True)
-
-# Apply one-hot encoding to the testing set
 test_df_encoded = pd.get_dummies(test_df, columns=cols_to_encode, drop_first=True)
 
 # ------------------------------
 # 6. Align the Training and Testing Datasets
 # ------------------------------
-# Ensure both datasets have the same columns (if a category is missing in one, fill it with 0)
 train_df_encoded, test_df_encoded = train_df_encoded.align(test_df_encoded, join='left', axis=1, fill_value=0)
 
 # ------------------------------
@@ -86,6 +78,6 @@ print(test_df_encoded.info())
 
 print("\nHead of Updated Training Data:")
 print(train_df_encoded.head())
-
 print("\nHead of Updated Testing Data:")
 print(test_df_encoded.head())
+
