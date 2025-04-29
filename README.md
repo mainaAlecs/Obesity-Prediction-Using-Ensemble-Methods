@@ -29,9 +29,6 @@ RapidMiner (for initial prototyping and feature ranking)
 Matplotlib / Seaborn (for EDA and visualization)
 
 📁 Project Structure
-bash
-Copy
-Edit
 ├── data/               # Dataset and preprocessing scripts
 ├── notebooks/          # Jupyter Notebooks with EDA and model development
 ├── src/                # Source code for preprocessing, feature engineering, modeling
