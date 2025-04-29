@@ -1,4 +1,6 @@
 📦 Obesity Prediction Using Ensemble Methods
+
+
 A machine learning project to classify individuals into seven obesity levels using Random Forest and feature engineering.
 Achieved 81.68% accuracy through systematic data preprocessing, feature selection, and model tuning.
 
