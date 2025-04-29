@@ -42,6 +42,8 @@ Matplotlib / Seaborn (for EDA and visualization)
 The final Random Forest classifier demonstrated strong generalization, especially in distinguishing between extreme classes. Some confusion persisted between adjacent classes like "Overweight I" and "Overweight II," attributed to feature overlap.
 
 📌 Future Work
+
+
 Experiment with deep learning models for feature extraction.
 
 Integrate additional lifestyle factors (e.g., sleep, stress).
