@@ -35,6 +35,9 @@ Matplotlib / Seaborn (for EDA and visualization)
 ├── results/            # Confusion matrices, evaluation metrics, and final model artifacts
 ├── README.md           # Project documentation
 └── requirements.txt    # Python dependencies
+
+
+
 ⚙️ Model Performance
 The final Random Forest classifier demonstrated strong generalization, especially in distinguishing between extreme classes. Some confusion persisted between adjacent classes like "Overweight I" and "Overweight II," attributed to feature overlap.
 
